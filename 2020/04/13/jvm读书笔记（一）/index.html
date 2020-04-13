@@ -168,17 +168,16 @@
 <p>满足这三种条件，这个类才可以被回收，但是不一定就会被回收。是否对类进行回收，HotSpot虚拟机提供了-Xnoclassgc参数进行控制。在大量使用反射、动态代理、cglib，动态生成Jsp已经OSGI这类频繁自定义ClassLoader的场景都需要虚拟机具备类卸载的功能，来保证永久代不会溢出</p>
 <p>6、垃圾回收算法</p>
 <p>6.1、标记-清除算法</p>
-<p>算法分为”标记“和”清除”俩个阶段：首先标记出所有需要回收的对象，在标记完成后统一回收。这是最基础的收集算法，其他算法都是基于这种思路进行改进的。它的不足主要有俩个：一是效率问题，标记和清除的效率都不高；二是空间问题，标记清除后会产生大量不连续的内存碎片，这会导致以后如果出现需要分配大内存的对象，会因为无法找到足够的连续内存，再触发另一次垃圾回收。执行过程如下图：</p>
-<p><img src="https://upload-images.jianshu.io/upload_images/22823288-5f9c32cdbe61eba2.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="img"></p>
+<p>算法分为”标记“和”清除”俩个阶段：首先标记出所有需要回收的对象，在标记完成后统一回收。这是最基础的收集算法，其他算法都是基于这种思路进行改进的。它的不足主要有俩个：一是效率问题，标记和清除的效率都不高；二是空间问题，标记清除后会产生大量不连续的内存碎片，这会导致以后如果出现需要分配大内存的对象，会因为无法找到足够的连续内存，再触发另一次垃圾回收。执行过程如下图：<img src="/2020/04/13/jvm%E8%AF%BB%E4%B9%A6%E7%AC%94%E8%AE%B0%EF%BC%88%E4%B8%80%EF%BC%89/F:%5Cmyr-blog%5Csource_posts%5Cjvm%E8%AF%BB%E4%B9%A6%E7%AC%94%E8%AE%B0%EF%BC%88%E4%B8%80%EF%BC%89%5C1.png" alt></p>
 <p>6.2、复制算法</p>
 <p>将内存分为俩块，每次只使用其中一块，但这块内存用完了，就将还存活着的对象复制到另一块上，然后把使用的这块内存一次清理。这样不用考虑内存碎片等复杂情况，提升了效率，实现简单。</p>
-<p><img src="https://upload-images.jianshu.io/upload_images/22823288-335bd9eece95210d.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="img"></p>
+<p><img src="/2020/04/13/jvm%E8%AF%BB%E4%B9%A6%E7%AC%94%E8%AE%B0%EF%BC%88%E4%B8%80%EF%BC%89/F:%5Cmyr-blog%5Csource_posts%5Cjvm%E8%AF%BB%E4%B9%A6%E7%AC%94%E8%AE%B0%EF%BC%88%E4%B8%80%EF%BC%89%5C2.png" alt></p>
 <p>堆内存的分配比例：</p>
 <p>将新生代的内存分为8：1：1，即eden区占80%，俩块survivor区各占10%。（新生代是指对象刚创建时进入的堆内存的一部分）</p>
 <p>每次只使用eden区和一块survivor区，可以使用的内存为90%，只浪费了10%。研究表明新生代的对象98%都是“朝生夕死”，每次只要将eden和survivor区中存活的对象复制到另一块survivor区上，然后清理eden和使用过的那块survivor，因为98%的新生对象都基本上是垃圾了，所以这10%才能装的下。但是也不一定的，总会出现一些特殊的情况，如果survivor空间也不够的话，就要依赖老年代了。（老年代也是堆内存的一部分）</p>
 <p>6.3、标记-整理算法</p>
 <p>过程与标记清除算法一样，但是不是对可以回收的对象进行清理，而是让所有存活的对象向一端移动，然后直接清理端的边界以外的内存。</p>
-<p><img src="https://upload-images.jianshu.io/upload_images/22823288-0ead8cb42d191784.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="img"></p>
+<p><img src="/2020/04/13/jvm%E8%AF%BB%E4%B9%A6%E7%AC%94%E8%AE%B0%EF%BC%88%E4%B8%80%EF%BC%89/F:%5Cmyr-blog%5Csource_posts%5Cjvm%E8%AF%BB%E4%B9%A6%E7%AC%94%E8%AE%B0%EF%BC%88%E4%B8%80%EF%BC%89%5C3.png" alt></p>
 <p>6.4、分代收集</p>
 <p>新生代和老年代根据对象存活周期的不同使用不同的收集算法：新生代一般选用复制算法，老年代使用标记清除或者标记整理算法。</p>
 
