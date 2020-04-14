@@ -20,7 +20,7 @@
   <meta http-equiv="X-UA-Compatible" content="IE=edge, chrome=1">
   <meta name="renderer" content="webkit">
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, shrink-to-fit=no", user-scalable=no">
-  <title>jvm读书笔记（一）莫逸然的日常</title>
+  <title>mysql Schema与数据类型优化莫逸然的日常</title>
   <link rel="shortcut icon" href="">
   
     
@@ -109,8 +109,8 @@
             </header>
                 
 <header class="blog-post-page-title">
-    <h4>jvm读书笔记（一）</h4>
-    <time datetime="2020-04-13T08:54:31.000Z"><i class="fa fa-clock-o"></i>2020-04-13</time>
+    <h4>mysql Schema与数据类型优化</h4>
+    <time datetime="2020-04-14T01:13:13.000Z"><i class="fa fa-clock-o"></i>2020-04-14</time>
     
     
     
@@ -122,72 +122,41 @@
     <article class="blog-post-block blog-post-page-content">
         <section>
             
-                <p>jvm读书笔记之（一）</p>
-<p>一、jvm内存区域</p>
-<p>1、程序计数器</p>
-<p>简要的来说，字节码解释器工作时通过改变这个计数器的指来选择下一个需要执行的字节码指令，分支、循环、跳转、异常处理、线程恢复等。如果线程执行的是一个java方法，计数器记录的是正在执行的虚拟机字节码指令的地址、如果是native方法，这个计数器值为空。</p>
-<p>2、java虚拟机栈</p>
-<p>java虚拟栈是线程私有的，与线程是一样的生命周期。方法在执行时会创建一个栈帧，存储局部变量表、操作数块、动态链接、方法出口等信息。每个方法从调用到执行完成的过程，对应着一个栈帧在虚拟机栈中入栈到出栈的过程。</p>
-<p>局部变量表存放了编译期可知的各种基本数据类型（boolean、byte、int等等）、对象引用。</p>
-<p>3、本地方法栈</p>
-<p>与虚拟机栈不同的是，虚拟机栈是为执行java方法服务，本地方法栈是为执行native方法服务。不同虚拟机对本地方法栈的实现不同，如sun公司的HotSpot虚拟机将虚拟机栈和本地方法栈合二为一。</p>
-<p>4、java堆</p>
-<p>堆是被所有线程共享的一款内存区域，几乎所有的对象实例都在堆上分配内存（栈上分配、标量替换则不一定）。</p>
-<p>5、方法区</p>
-<p>方法区是被所有线程共享的一块内存区域，用于存储已经被虚拟机加载的类信息、常量、静态变量、JIT编译后的代码等数据。方法区不是堆，java虚拟机规范只是把其描述为堆的一个逻辑部分，应当与堆区分开。</p>
-<p>HotSpot虚拟机在jdk1.7之前使用永久代来实现方法区，将GC分代收集扩展至方法区，可以向管理堆一样管理方法区，但是容易遇到内存溢出的问题，jdk1.8开始使用Metaspace代替永久代。</p>
-<p>注：Metaspace所占用的内存不在虚拟机内，而是在本地内存中。</p>
-<p>6、运行时常量池</p>
-<p>jdk1.7中，运行时常量池是方法区的一部分。Class文件中除了有类的版本、字段、方法、接口等描述信息外，还有一项是常量池，用于存放编译期生成的各种字面量和符号引用。这部分内容会在类加载后进入运行时常量池中存放。</p>
-<p>7、直接内存</p>
-<p>不属于虚拟机内存，但是也被频繁的使用，也可能导致OutOfMemoryError异常</p>
-<p>二、垃圾收集器与内存分配策略</p>
-<p>1、引用计数法</p>
-<p>在对象中添加一个引用计数器，每有一个地方引用它，计数器值加1，引用失效时，计数器值减1，计数器值为0，对象可以被回收。但是难以解决循环引用的方式。</p>
-<p>2、可达性分析算法</p>
-<p>Jvm采用的就是此算法。从GC Roots对象开始向下搜索，如果GC Roots节点到这个对象不可达，则为可回收的对象。</p>
-<p>GC Roots对象包括以下几种:</p>
-<p>1、虚拟机栈（栈帧中的本地变量表）中引用的对象。</p>
-<p>2、方法区中类静态属性引用的对象。</p>
-<p>3、方法区中常量引用的对象。</p>
-<p>4、本地方法栈中native方法引用的对象。</p>
-<p>3、引用类型的详细分类</p>
-<p>从强到弱依次是强、软、弱、虚。</p>
-<p>1、强引用（Strong Reference）:代码中普遍存在的，如Object o = new Object()，只要引用还存在，就不会被    回收。</p>
-<p>2、软引用（Soft Reference）:有用但并非必须的对象，在jvm即将发生内存溢出时，这些对象将被回收。jdk中提供    了SoftReference类来实现软引用。</p>
-<p>3、弱引用（Weak Reference）:也是非必须的对象，但是强度弱于软引用。被其关联的对象只能活到下次垃圾回收发    生之前。jdk提供了WeakReference类来实现弱引用。</p>
-<p>4、虚引用（Phantom Reference）：最弱的一种引用，为一个对象设置虚引用，只是为了能在这个对象被回收时收    到一个系统通知。jdk提供了PhantomReference类实现虚引用。</p>
-<p>4、finalize()方法</p>
-<p>对象被回收时会调用finalize()方法，如果在其中自救，重新获得引用，就不会被回收。但是每个对象的finalize()方法    只会调用一次，下次被回收时自救就没用了。</p>
-<p>5、方法区的回收</p>
-<p>java虚拟机规范中表示不要求虚拟机在方法区实现垃圾回收，而且方法区进行垃圾回收的性价比低。在堆的新生代中，一次垃圾回收可以回收70%~95%的内存。尽管这样，还是有方法区的垃圾回收存在。</p>
-<p>jdk1.7的HotSpot虚拟机中，永久代的垃圾回收主要回收俩部分：废弃常量和无用的类。没有String对象引用常量池中的常量，这个常量就可以被回收。而一个类是无用的类，需要同时满足下面3个条件：</p>
-<p>1、该类所有的实例都被回收，即堆中不存在该类的任何实例。</p>
-<p>2、加载该类的ClassLoader已经被回收。</p>
-<p>3、该类的Class对象没有被在任何地方被引用，无法在任何地方通过反射访问该类的方法。</p>
-<p>满足这三种条件，这个类才可以被回收，但是不一定就会被回收。是否对类进行回收，HotSpot虚拟机提供了-Xnoclassgc参数进行控制。在大量使用反射、动态代理、cglib，动态生成Jsp已经OSGI这类频繁自定义ClassLoader的场景都需要虚拟机具备类卸载的功能，来保证永久代不会溢出</p>
-<p>6、垃圾回收算法</p>
-<p>6.1、标记-清除算法</p>
-<p>算法分为”标记“和”清除”俩个阶段：首先标记出所有需要回收的对象，在标记完成后统一回收。这是最基础的收集算法，其他算法都是基于这种思路进行改进的。它的不足主要有俩个：一是效率问题，标记和清除的效率都不高；二是空间问题，标记清除后会产生大量不连续的内存碎片，这会导致以后如果出现需要分配大内存的对象，会因为无法找到足够的连续内存，再触发另一次垃圾回收。执行过程如下图：<img src="/2020/04/13/jvm%E8%AF%BB%E4%B9%A6%E7%AC%94%E8%AE%B0%EF%BC%88%E4%B8%80%EF%BC%89/1.png" alt></p>
-<p>6.2、复制算法</p>
-<p>将内存分为俩块，每次只使用其中一块，但这块内存用完了，就将还存活着的对象复制到另一块上，然后把使用的这块内存一次清理。这样不用考虑内存碎片等复杂情况，提升了效率，实现简单。</p>
-<p><img src="/2020/04/13/jvm%E8%AF%BB%E4%B9%A6%E7%AC%94%E8%AE%B0%EF%BC%88%E4%B8%80%EF%BC%89/2.png" alt></p>
-<p>堆内存的分配比例：</p>
-<p>将新生代的内存分为8：1：1，即eden区占80%，俩块survivor区各占10%。（新生代是指对象刚创建时进入的堆内存的一部分）</p>
-<p>每次只使用eden区和一块survivor区，可以使用的内存为90%，只浪费了10%。研究表明新生代的对象98%都是“朝生夕死”，每次只要将eden和survivor区中存活的对象复制到另一块survivor区上，然后清理eden和使用过的那块survivor，因为98%的新生对象都基本上是垃圾了，所以这10%才能装的下。但是也不一定的，总会出现一些特殊的情况，如果survivor空间也不够的话，就要依赖老年代了。（老年代也是堆内存的一部分）</p>
-<p>6.3、标记-整理算法</p>
-<p>过程与标记清除算法一样，但是不是对可以回收的对象进行清理，而是让所有存活的对象向一端移动，然后直接清理端的边界以外的内存。</p>
-<p><img src="/2020/04/13/jvm%E8%AF%BB%E4%B9%A6%E7%AC%94%E8%AE%B0%EF%BC%88%E4%B8%80%EF%BC%89/3.png" alt></p>
-<p>6.4、分代收集</p>
-<p>新生代和老年代根据对象存活周期的不同使用不同的收集算法：新生代一般选用复制算法，老年代使用标记清除或者标记整理算法。</p>
-
+                <h1 id="一、选择优化的数据类型"><a href="#一、选择优化的数据类型" class="headerlink" title="一、选择优化的数据类型"></a>一、选择优化的数据类型</h1><p>1、更小的通常更好。</p>
+<p>一般情况下，这样选择通常更快，因为他们占用更少的磁盘、内存和CPU缓存，处理起来速度快。</p>
+<p>2、简单就好。</p>
+<p>简单数据类型的操作通常更快。比如整型比字符串操作代价低，因为字符集和排序规则是字符比较比整型比较更复杂。（eg1:应当使用date,time,datetime等存储日期时间而不是字符串；eg2:应该使用整型存储ip地址）</p>
+<p>3、尽量避免null</p>
+<p>如果这个列不需要存储null，请指定列为not null。</p>
+<p>查询中包含null的列，对mysql来说更难优化。因为包含null的列会使索引、索引统计和值比较都更复杂，可为null的列会使用更多的存储空间。当可为null的列被索引时，每个索引记录需要一个额外字节。</p>
+<p>null改为not null提升的性能比较小，因此调优时不那么优先。</p>
+<h2 id="1-1-整数类型"><a href="#1-1-整数类型" class="headerlink" title="1.1    整数类型"></a>1.1    整数类型</h2><p>存储整数可以使用这几种数据类型: tinyint(8bit)，smallint(16bit), mediumint(24bit), int(32bit)，bigint(64bit)</p>
+<p>整数计算一般使用bigint。</p>
+<p>int(1)和int(20)是相同的，只是规定了mysql的一些交互工具（mysql命令行客户端）用来显示字符的个数。</p>
+<h2 id="1-2-实数类型"><a href="#1-2-实数类型" class="headerlink" title="1.2    实数类型"></a>1.2    实数类型</h2><p>实数是指带有小数的数字。</p>
+<p>只在小数进行精确计算时才使用decimal。但若数据量太大，使用Bigint代替，将小数乘以倍数，然后变成整数存储在bigint中，避免浮点计算不精确和decimal精确计算代价高的问题。</p>
+<h2 id="1-3-字符串类型"><a href="#1-3-字符串类型" class="headerlink" title="1.3    字符串类型"></a>1.3    字符串类型</h2><p>vachar: 存储长度可变字符串，但是需要1或2个额外字节记录字符串的长度（列最大长度小于等于255,1个字节，否则2个字节）。例如varchar(10)的列要11个字节，varchar(1000)是1002个字节。过长的varchar存储为blob类型。</p>
+<p>char:定长的值，不易产生碎片，例如存储md5，char(1)来存储只有Y,N的值。</p>
+<p>blob: 存储的二进制</p>
+<p>text:字符串</p>
+<p>blob和text的排序只排序前面一小部分字符，可以使用<code>ORDER BY SUBSTRING(column,length)</code></p>
+<p>使用枚举(Enum)代替字符串</p>
+<h1 id="二、schema设计的陷阱"><a href="#二、schema设计的陷阱" class="headerlink" title="二、schema设计的陷阱"></a>二、schema设计的陷阱</h1><p>1、太多的列。</p>
+<p>MySQL的存储引擎API工作时需要在服务器层和存储引擎层之间通过行缓冲格式拷贝数据，然后在服务器层将缓冲内容解码成各个列。从行缓冲中将编码过的列转换成行数据结构的操作代价是非常高的。如使用了非常宽的表(数千个字段)，然而只有一小部分列会实际用到，这时转换的代价就非常高。</p>
+<p>2、太多的关联。</p>
+<p>mysql限制每个关联操作最多只有61张表。单个查询最好在12张表以内做关联。</p>
+<p>3、过度使用枚举。</p>
+<p>4、变相的枚举</p>
+<p>5、代替null。</p>
+<p>使用0或其他值，空字符串等来替代null。（mysql会在索引中存储null，而oracle不会）</p>
+<h1 id="三、使用缓存表和汇总表"><a href="#三、使用缓存表和汇总表" class="headerlink" title="三、使用缓存表和汇总表"></a>三、使用缓存表和汇总表</h1>
             
         </section>
         <footer class="blog-post-page-tags">
         
 			
 				
-			<a href="/tags/JVM/" rel="tag" data-toggle="tooltip" data-placement="top" title="Linux">JVM</a>
+			<a href="/tags/mysql/" rel="tag" data-toggle="tooltip" data-placement="top" title="Linux">mysql</a>
 				
 			
 		
@@ -197,10 +166,10 @@
     	
     	
 		
-			<a href="/2020/04/14/mysql(%E4%B8%80)/" class="blog-post-page-readmore-prev" data-toggle="tooltip" data-placement="top" title="mysql Schema与数据类型优化">上一篇</a>
-		
 
 		
+		
+			<a href="/2020/04/13/jvm%E8%AF%BB%E4%B9%A6%E7%AC%94%E8%AE%B0%EF%BC%88%E4%B8%80%EF%BC%89/" class="blog-post-page-readmore-next" data-toggle="tooltip" data-placement="top" title="jvm读书笔记（一）">下一篇</a>
 		
 
         <div style="clear: both;"></div>
@@ -303,7 +272,7 @@
                 return out;
             }
             // 生成
-            var qrcode= $('.post-qrcode-content-canvas').qrcode({width: 150,height: 150,text: toUtf8("http://myr666233.github.io/2020/04/13/jvm%E8%AF%BB%E4%B9%A6%E7%AC%94%E8%AE%B0%EF%BC%88%E4%B8%80%EF%BC%89/")}).hide();
+            var qrcode= $('.post-qrcode-content-canvas').qrcode({width: 150,height: 150,text: toUtf8("http://myr666233.github.io/2020/04/14/mysql(%E4%B8%80)/")}).hide();
             var canvas=qrcode.find('canvas').get(0);
             $('.post-qrcode-content-img').attr('src',canvas.toDataURL('image/jpg'));
         </script>
