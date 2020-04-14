@@ -141,6 +141,10 @@
 <p>text:字符串</p>
 <p>blob和text的排序只排序前面一小部分字符，可以使用<code>ORDER BY SUBSTRING(column,length)</code></p>
 <p>使用枚举(Enum)代替字符串</p>
+<h2 id="1-4-datetime和timesamp"><a href="#1-4-datetime和timesamp" class="headerlink" title="1.4     datetime和timesamp"></a>1.4     datetime和timesamp</h2><p>datetime和timesamp都可以存储相同的数据类型,时间和日期，精确到秒。然而timesamp只使用datetime一半的存储空间</p>
+<p>timesamp 会根据时区变化，具有特殊的自动更新能力，允许的时间范围要小很多。</p>
+<h2 id="1-5-ip地址的处理"><a href="#1-5-ip地址的处理" class="headerlink" title="1.5    ip地址的处理"></a>1.5    ip地址的处理</h2><p>插入数据前，先用<code>inet_aton</code>把ip地址转为整型，可以节省空间，因为<code>char(15)</code> 占16字节。</p>
+<p>显示数据时，使用<code>inet_ntoa</code>把整型的ip地址转为电地址显示即可。</p>
 <h1 id="二、schema设计的陷阱"><a href="#二、schema设计的陷阱" class="headerlink" title="二、schema设计的陷阱"></a>二、schema设计的陷阱</h1><p>1、太多的列。</p>
 <p>MySQL的存储引擎API工作时需要在服务器层和存储引擎层之间通过行缓冲格式拷贝数据，然后在服务器层将缓冲内容解码成各个列。从行缓冲中将编码过的列转换成行数据结构的操作代价是非常高的。如使用了非常宽的表(数千个字段)，然而只有一小部分列会实际用到，这时转换的代价就非常高。</p>
 <p>2、太多的关联。</p>
@@ -149,7 +153,15 @@
 <p>4、变相的枚举</p>
 <p>5、代替null。</p>
 <p>使用0或其他值，空字符串等来替代null。（mysql会在索引中存储null，而oracle不会）</p>
-<h1 id="三、使用缓存表和汇总表"><a href="#三、使用缓存表和汇总表" class="headerlink" title="三、使用缓存表和汇总表"></a>三、使用缓存表和汇总表</h1>
+<h1 id="三、总结"><a href="#三、总结" class="headerlink" title="三、总结"></a>三、总结</h1><p>1、尽量避免过度设计，例如会导致极其复杂査询的schema设计，或者有很多列的表设计</p>
+<p>2、使用小而简单的合适数据类型，除非真实数据模型中有确切的需要，否则应该尽可能地避免使用NULL值。</p>
+<p>3、尽量使用相同的数据类型存储相似或相关的值，尤其是要在关联条件中使用的列。</p>
+<p>4、注意可变长字符串，其在临时表和排序时可能导致悲观的按最大长度分配内存。</p>
+<p>5、尽量使用整型定义标识列。</p>
+<p>6、避免使用MySQL已经遗弃的特性，例如指定浮点数的精度，或者整数的显示宽度。</p>
+<p>7、小心使用ENUM和SET。虽然它们用起来很方便，但是不要滥用，否则有时候会变成 陷阱。最好避免使用BIT。</p>
+<p>8、ALTER TABLE是让人痛苦的操作，因为在大部分情况下，它都会锁表并且重建整张表。例如在备机执行ALTER并在完成后把它切换为主库。</p>
+
             
         </section>
         <footer class="blog-post-page-tags">
