@@ -20,7 +20,7 @@
   <meta http-equiv="X-UA-Compatible" content="IE=edge, chrome=1">
   <meta name="renderer" content="webkit">
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, shrink-to-fit=no", user-scalable=no">
-  <title>jvm读书笔记（一）莫逸然的成长之路</title>
+  <title>JVM对象分配莫逸然的成长之路</title>
   <link rel="shortcut icon" href="">
   
     
@@ -109,8 +109,8 @@
             </header>
                 
 <header class="blog-post-page-title">
-    <h4>jvm读书笔记（一）</h4>
-    <time datetime="2020-04-13T08:54:31.000Z"><i class="fa fa-clock-o"></i>2020-04-13</time>
+    <h4>JVM对象分配</h4>
+    <time datetime="2020-04-26T06:43:31.000Z"><i class="fa fa-clock-o"></i>2020-04-26</time>
     
     
     
@@ -122,64 +122,160 @@
     <article class="blog-post-block blog-post-page-content">
         <section>
             
-                <p>jvm读书笔记之（一）</p>
-<p>一、jvm内存区域</p>
-<p>1、程序计数器</p>
-<p>简要的来说，字节码解释器工作时通过改变这个计数器的指来选择下一个需要执行的字节码指令，分支、循环、跳转、异常处理、线程恢复等。如果线程执行的是一个java方法，计数器记录的是正在执行的虚拟机字节码指令的地址、如果是native方法，这个计数器值为空。</p>
-<p>2、java虚拟机栈</p>
-<p>java虚拟栈是线程私有的，与线程是一样的生命周期。方法在执行时会创建一个栈帧，存储局部变量表、操作数块、动态链接、方法出口等信息。每个方法从调用到执行完成的过程，对应着一个栈帧在虚拟机栈中入栈到出栈的过程。</p>
-<p>局部变量表存放了编译期可知的各种基本数据类型（boolean、byte、int等等）、对象引用。</p>
-<p>3、本地方法栈</p>
-<p>与虚拟机栈不同的是，虚拟机栈是为执行java方法服务，本地方法栈是为执行native方法服务。不同虚拟机对本地方法栈的实现不同，如sun公司的HotSpot虚拟机将虚拟机栈和本地方法栈合二为一。</p>
-<p>4、java堆</p>
-<p>堆是被所有线程共享的一款内存区域，几乎所有的对象实例都在堆上分配内存（栈上分配、标量替换则不一定）。</p>
-<p>5、方法区</p>
-<p>方法区是被所有线程共享的一块内存区域，用于存储已经被虚拟机加载的类信息、常量、静态变量、JIT编译后的代码等数据。方法区不是堆，java虚拟机规范只是把其描述为堆的一个逻辑部分，应当与堆区分开。</p>
-<p>HotSpot虚拟机在jdk1.7之前使用永久代来实现方法区，将GC分代收集扩展至方法区，可以向管理堆一样管理方法区，但是容易遇到内存溢出的问题，jdk1.8开始使用Metaspace代替永久代。</p>
-<p>注：Metaspace所占用的内存不在虚拟机内，而是在本地内存中。</p>
-<p>6、运行时常量池</p>
-<p>jdk1.7中，运行时常量池是方法区的一部分。Class文件中除了有类的版本、字段、方法、接口等描述信息外，还有一项是常量池，用于存放编译期生成的各种字面量和符号引用。这部分内容会在类加载后进入运行时常量池中存放。</p>
-<p>7、直接内存</p>
-<p>不属于虚拟机内存，但是也被频繁的使用，也可能导致OutOfMemoryError异常</p>
-<p>二、垃圾收集器与内存分配策略</p>
-<p>1、引用计数法</p>
-<p>在对象中添加一个引用计数器，每有一个地方引用它，计数器值加1，引用失效时，计数器值减1，计数器值为0，对象可以被回收。但是难以解决循环引用的方式。</p>
-<p>2、可达性分析算法</p>
-<p>Jvm采用的就是此算法。从GC Roots对象开始向下搜索，如果GC Roots节点到这个对象不可达，则为可回收的对象。</p>
-<p>GC Roots对象包括以下几种:</p>
-<p>1、虚拟机栈（栈帧中的本地变量表）中引用的对象。</p>
-<p>2、方法区中类静态属性引用的对象。</p>
-<p>3、方法区中常量引用的对象。</p>
-<p>4、本地方法栈中native方法引用的对象。</p>
-<p>3、引用类型的详细分类</p>
-<p>从强到弱依次是强、软、弱、虚。</p>
-<p>1、强引用（Strong Reference）:代码中普遍存在的，如Object o = new Object()，只要引用还存在，就不会被    回收。</p>
-<p>2、软引用（Soft Reference）:有用但并非必须的对象，在jvm即将发生内存溢出时，这些对象将被回收。jdk中提供    了SoftReference类来实现软引用。</p>
-<p>3、弱引用（Weak Reference）:也是非必须的对象，但是强度弱于软引用。被其关联的对象只能活到下次垃圾回收发    生之前。jdk提供了WeakReference类来实现弱引用。</p>
-<p>4、虚引用（Phantom Reference）：最弱的一种引用，为一个对象设置虚引用，只是为了能在这个对象被回收时收    到一个系统通知。jdk提供了PhantomReference类实现虚引用。</p>
-<p>4、finalize()方法</p>
-<p>对象被回收时会调用finalize()方法，如果在其中自救，重新获得引用，就不会被回收。但是每个对象的finalize()方法    只会调用一次，下次被回收时自救就没用了。</p>
-<p>5、方法区的回收</p>
-<p>java虚拟机规范中表示不要求虚拟机在方法区实现垃圾回收，而且方法区进行垃圾回收的性价比低。在堆的新生代中，一次垃圾回收可以回收70%~95%的内存。尽管这样，还是有方法区的垃圾回收存在。</p>
-<p>jdk1.7的HotSpot虚拟机中，永久代的垃圾回收主要回收俩部分：废弃常量和无用的类。没有String对象引用常量池中的常量，这个常量就可以被回收。而一个类是无用的类，需要同时满足下面3个条件：</p>
-<p>1、该类所有的实例都被回收，即堆中不存在该类的任何实例。</p>
-<p>2、加载该类的ClassLoader已经被回收。</p>
-<p>3、该类的Class对象没有被在任何地方被引用，无法在任何地方通过反射访问该类的方法。</p>
-<p>满足这三种条件，这个类才可以被回收，但是不一定就会被回收。是否对类进行回收，HotSpot虚拟机提供了-Xnoclassgc参数进行控制。在大量使用反射、动态代理、cglib，动态生成Jsp已经OSGI这类频繁自定义ClassLoader的场景都需要虚拟机具备类卸载的功能，来保证永久代不会溢出</p>
-<p>6、垃圾回收算法</p>
-<p>6.1、标记-清除算法</p>
-<p>算法分为”标记“和”清除”俩个阶段：首先标记出所有需要回收的对象，在标记完成后统一回收。这是最基础的收集算法，其他算法都是基于这种思路进行改进的。它的不足主要有俩个：一是效率问题，标记和清除的效率都不高；二是空间问题，标记清除后会产生大量不连续的内存碎片，这会导致以后如果出现需要分配大内存的对象，会因为无法找到足够的连续内存，再触发另一次垃圾回收。执行过程如下图：<img src="/2020/04/13/jvm%E8%AF%BB%E4%B9%A6%E7%AC%94%E8%AE%B0%EF%BC%88%E4%B8%80%EF%BC%89/1.png" alt></p>
-<p>6.2、复制算法</p>
-<p>将内存分为俩块，每次只使用其中一块，但这块内存用完了，就将还存活着的对象复制到另一块上，然后把使用的这块内存一次清理。这样不用考虑内存碎片等复杂情况，提升了效率，实现简单。</p>
-<p><img src="/2020/04/13/jvm%E8%AF%BB%E4%B9%A6%E7%AC%94%E8%AE%B0%EF%BC%88%E4%B8%80%EF%BC%89/2.png" alt></p>
-<p>堆内存的分配比例：</p>
-<p>将新生代的内存分为8：1：1，即eden区占80%，俩块survivor区各占10%。（新生代是指对象刚创建时进入的堆内存的一部分）</p>
-<p>每次只使用eden区和一块survivor区，可以使用的内存为90%，只浪费了10%。研究表明新生代的对象98%都是“朝生夕死”，每次只要将eden和survivor区中存活的对象复制到另一块survivor区上，然后清理eden和使用过的那块survivor，因为98%的新生对象都基本上是垃圾了，所以这10%才能装的下。但是也不一定的，总会出现一些特殊的情况，如果survivor空间也不够的话，就要依赖老年代了。（老年代也是堆内存的一部分）</p>
-<p>6.3、标记-整理算法</p>
-<p>过程与标记清除算法一样，但是不是对可以回收的对象进行清理，而是让所有存活的对象向一端移动，然后直接清理端的边界以外的内存。</p>
-<p><img src="/2020/04/13/jvm%E8%AF%BB%E4%B9%A6%E7%AC%94%E8%AE%B0%EF%BC%88%E4%B8%80%EF%BC%89/3.png" alt></p>
-<p>6.4、分代收集</p>
-<p>新生代和老年代根据对象存活周期的不同使用不同的收集算法：新生代一般选用复制算法，老年代使用标记清除或者标记整理算法。</p>
+                <h2 id="JVM对象分配：栈上分配-amp-TLAB分配"><a href="#JVM对象分配：栈上分配-amp-TLAB分配" class="headerlink" title="JVM对象分配：栈上分配 &amp; TLAB分配"></a>JVM对象分配：栈上分配 &amp; TLAB分配</h2><h3 id="1、java对象分配流程"><a href="#1、java对象分配流程" class="headerlink" title="1、java对象分配流程"></a>1、java对象分配流程</h3><p><img src="/2020/04/26/JVM%E5%AF%B9%E8%B1%A1%E5%88%86%E9%85%8D/%E5%9B%BE%E7%89%87%5C1.png" alt="1"></p>
+<h3 id="2、栈上分配"><a href="#2、栈上分配" class="headerlink" title="2、栈上分配"></a>2、栈上分配</h3><p>2.1 本质：Java虚拟机提供的一项优化技术</p>
+<p>2.2 基本思想： 将线程私有的对象打散分配在栈上</p>
+<p>2.3 优点：</p>
+<p>   2.3.1 可以在函数调用结束后自行销毁对象，不需要垃圾回收器的介入，有效避免垃圾回收带来的负面影响</p>
+<p>   2.3.2 栈上分配速度快，提高系统性能</p>
+<p>2.4 局限性： 栈空间小，对于大对象无法实现栈上分配</p>
+<p>2.5 技术基础： 逃逸分析</p>
+<p>​    2.5.1 逃逸分析的目的： 判断对象的作用域是否超出函数体[即:判断是否逃逸出函数体]</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">//user的作用域超出了函数setUser的范围,是逃逸对象</span></span><br><span class="line"><span class="comment">//当函数结束调用时，不会自行销毁user</span></span><br><span class="line"><span class="keyword">private</span> User user;</span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">setUser</span><span class="params">()</span></span>&#123;</span><br><span class="line">    user = <span class="keyword">new</span> User();</span><br><span class="line">    user.setId(<span class="number">1</span>);</span><br><span class="line">    user.setName(<span class="string">"blueStarWei"</span>);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">//u只在函数内部生效，不是逃逸对象</span></span><br><span class="line"><span class="comment">//当函数调用结束，会自行销毁对象u</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">createUser</span><span class="params">()</span></span>&#123;</span><br><span class="line">    User u = <span class="keyword">new</span> User();</span><br><span class="line">    u.setId(<span class="number">2</span>);</span><br><span class="line">    u.setName(<span class="string">"JVM"</span>);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>2.6 栈上分配示例</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">AllotOnStack</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">main</span><span class="params">(String[] args)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">long</span> start = System.currentTimeMillis();</span><br><span class="line">        <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; <span class="number">100000000</span>; i++) &#123;</span><br><span class="line">            alloc();</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">long</span> end = System.currentTimeMillis();</span><br><span class="line">        System.out.println(end - start);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">alloc</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        User user = <span class="keyword">new</span> User();</span><br><span class="line">        user.setId(<span class="number">1</span>);</span><br><span class="line">        user.setName(<span class="string">"blueStarWei"</span>);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>2.6.1 上述代码调用了1亿次alloc()，如果是分配到堆上，大概需要1.5GB的堆空间，如果堆空间小于该值，必然会触发GC。</p>
+<p> 2.6.2 使用如下参数运行，发现不会触发GC</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">-server -Xmx15m -Xms15m -XX:+DoEscapeAnalysis -XX:+PrintGC -XX:-UseTLAB -XX:+EliminateAllocations</span><br></pre></td></tr></table></figure>
+
+<p>   2.6.3 使用如下参数（任意一行）运行，会发现触发大量GC</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">//不使用逃逸分析,只使用标量替换</span></span><br><span class="line">-server -Xmx15m -Xms15m -XX:－DoEscapeAnalysis -XX:+PrintGC -XX:-UseTLAB -XX:+EliminateAllocations</span><br><span class="line"></span><br><span class="line"><span class="comment">//不使用标量替换，只使用逃逸分析</span></span><br><span class="line">-server -Xmx15m -Xms15m -XX:＋DoEscapeAnalysis -XX:+PrintGC -XX:-UseTLAB -XX:－EliminateAllocations</span><br></pre></td></tr></table></figure>
+
+<p>2.6.4 GC日志</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">[GC (Allocation Failure)  <span class="number">4095</span>K-&gt;<span class="number">528</span>K(<span class="number">15872</span>K), <span class="number">0.0025208</span> secs]</span><br><span class="line">[GC (Allocation Failure)  <span class="number">4624</span>K-&gt;<span class="number">552</span>K(<span class="number">15872</span>K), <span class="number">0.0012518</span> secs]</span><br><span class="line">[GC (Allocation Failure)  <span class="number">4648</span>K-&gt;<span class="number">608</span>K(<span class="number">15872</span>K), <span class="number">0.0009262</span> secs]</span><br><span class="line">......(省略)</span><br><span class="line"><span class="number">3718</span></span><br></pre></td></tr></table></figure>
+
+<p>2.6.4.1 GC日志解析</p>
+<table>
+<thead>
+<tr>
+<th align="center">参数</th>
+<th align="center">作用</th>
+<th align="center">备注</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="center">GC</td>
+<td align="center">用来区分是 Minor GC 还是 Full GC 的标志(Flag).</td>
+<td align="center">这里的 <code>GC</code> 表明本次发生的是 Minor GC</td>
+</tr>
+<tr>
+<td align="center">Allocation Failure</td>
+<td align="center">引起垃圾回收的原因</td>
+<td align="center">本次GC是因为年轻代中没有任何合适的区域能够存放需要分配的数据结构而触发的</td>
+</tr>
+<tr>
+<td align="center">4095K-&gt;528K</td>
+<td align="center">在本次GC之前和之后的堆内存使用情况.</td>
+<td align="center">本次GC前，堆内存使用空间4095K, GC后堆内存使用空间为528K</td>
+</tr>
+<tr>
+<td align="center">(15872K)</td>
+<td align="center">堆的总的大小</td>
+<td align="center"></td>
+</tr>
+<tr>
+<td align="center">0.0025208 secs</td>
+<td align="center">本次GC使用时间（单位：秒)</td>
+<td align="center"></td>
+</tr>
+</tbody></table>
+<p>2.6.5 JVM参数解析</p>
+<table>
+<thead>
+<tr>
+<th align="center">参数</th>
+<th align="center">作用</th>
+<th align="center">备注</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="center">-server</td>
+<td align="center">使用server模式</td>
+<td align="center">只有在server模式下，才可以启用逃逸分析</td>
+</tr>
+<tr>
+<td align="center">-Xmx15m</td>
+<td align="center">设置最大堆空间为15m</td>
+<td align="center">如果在堆上分配，必然触发大量GC</td>
+</tr>
+<tr>
+<td align="center">-Xms15m</td>
+<td align="center">设初始堆空间为15m</td>
+<td align="center"></td>
+</tr>
+<tr>
+<td align="center">-XX:+DoEscapeAnalysis</td>
+<td align="center">启用逃逸分析</td>
+<td align="center">默认启用</td>
+</tr>
+<tr>
+<td align="center">-XX:-DoEscapeAnalysis</td>
+<td align="center">关闭逃逸分析</td>
+<td align="center"></td>
+</tr>
+<tr>
+<td align="center">-XX:+PrintGC</td>
+<td align="center">打印ＧＣ日志</td>
+<td align="center"></td>
+</tr>
+<tr>
+<td align="center">-XX:-UseTLAB</td>
+<td align="center">关闭TLAB</td>
+<td align="center">TLAB(Thread Local Allocation Buffer)线程本地分配缓存区</td>
+</tr>
+<tr>
+<td align="center">-XX:+EliminateAllocations</td>
+<td align="center">启用标量替换，允许对象打散分配到栈上</td>
+<td align="center">默认启用</td>
+</tr>
+<tr>
+<td align="center">-XX:-EliminateAllocations</td>
+<td align="center">关闭标量替换</td>
+<td align="center"></td>
+</tr>
+</tbody></table>
+<h3 id="3、TLAB分配"><a href="#3、TLAB分配" class="headerlink" title="3、TLAB分配"></a>3、TLAB分配</h3><p>TLAB，全称Thread Local Allocation Buffer, 即：线程本地分配缓存。这是一块线程专用的内存分配区域。TLAB占用的是eden区的空间。在TLAB启用的情况下（默认开启），JVM会为每一个线程分配一块TLAB区域。</p>
+<p>3.1 为什么需要TLAB？</p>
+<p>　　这是为了加速对象的分配。由于对象一般分配在堆上，而堆是线程共用的，因此可能会有多个线程在堆上申请空间，而每一次的对象分配都必须线程同步，会使分配的效率下降。考虑到对象分配几乎是Java中最常用的操作，因此JVM使用了TLAB这样的线程专有区域来避免多线程冲突，提高对象分配的效率。</p>
+<p>3.2 局限性： TLAB空间一般不会太大（占用eden区），所以大对象无法进行TLAB分配，只能直接分配到堆上。</p>
+<p>3.3 分配策略：</p>
+<p>　　一个100KB的TLAB区域，如果已经使用了80KB，当需要分配一个30KB的对象时，TLAB是如何分配的呢？</p>
+<p>　  此时，虚拟机有两种选择：第一，废弃当前的TLAB（会浪费20KB的空3.4 间）；第二，将这个30KB的对象直接分配到堆上，保留当前TLAB（当有小于20KB的对象请求TLAB分配时可以直接使用该TLAB区域）。</p>
+<p>　　JVM选择的策略是：在虚拟机内部维护一个叫refill_waste的值，当请求对象大于refill_waste时，会选择在堆中分配，反之，则会废弃当前TLAB，新建TLAB来分配新对象。</p>
+<p>　　【默认情况下，TLAB和refill_waste都是会在运行时不断调整的，使系统的运行状态达到最优。】</p>
+<p>  3.4 JVM参数解析</p>
+<table>
+<thead>
+<tr>
+<th align="center">参数</th>
+<th align="center">作用</th>
+<th align="center">备注</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="center">-XX:+UseTLAB</td>
+<td align="center">启用TLAB</td>
+<td align="center">默认启用</td>
+</tr>
+<tr>
+<td align="center">-XX:TLABRefillWasteFraction</td>
+<td align="center">设置允许空间浪费的比例</td>
+<td align="center">默认值：64，即：使用1/64的TLAB空间大小作为refill_waste值</td>
+</tr>
+<tr>
+<td align="center">-XX:-ResizeTLAB</td>
+<td align="center">禁止系统自动调整TLAB大小</td>
+<td align="center"></td>
+</tr>
+<tr>
+<td align="center">-XX:TLABSize</td>
+<td align="center">指定TLAB大小</td>
+<td align="center">单位：B</td>
+</tr>
+</tbody></table>
+<p>引用：<a href="https://www.cnblogs.com/BlueStarWei/p/9358757.html" target="_blank" rel="noopener">https://www.cnblogs.com/BlueStarWei/p/9358757.html</a></p>
 
             
         </section>
@@ -197,10 +293,10 @@
     	
     	
 		
-			<a href="/2020/04/14/mysql(%E4%B8%80)/" class="blog-post-page-readmore-prev" data-toggle="tooltip" data-placement="top" title="mysql Schema与数据类型优化">上一篇</a>
-		
 
 		
+		
+			<a href="/2020/04/14/mysql(%E4%B8%80)/" class="blog-post-page-readmore-next" data-toggle="tooltip" data-placement="top" title="mysql Schema与数据类型优化">下一篇</a>
 		
 
         <div style="clear: both;"></div>
@@ -303,7 +399,7 @@
                 return out;
             }
             // 生成
-            var qrcode= $('.post-qrcode-content-canvas').qrcode({width: 150,height: 150,text: toUtf8("http://myr666233.github.io/2020/04/13/jvm%E8%AF%BB%E4%B9%A6%E7%AC%94%E8%AE%B0%EF%BC%88%E4%B8%80%EF%BC%89/")}).hide();
+            var qrcode= $('.post-qrcode-content-canvas').qrcode({width: 150,height: 150,text: toUtf8("http://myr666233.github.io/2020/04/26/JVM%E5%AF%B9%E8%B1%A1%E5%88%86%E9%85%8D/")}).hide();
             var canvas=qrcode.find('canvas').get(0);
             $('.post-qrcode-content-img').attr('src',canvas.toDataURL('image/jpg'));
         </script>

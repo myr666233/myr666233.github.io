@@ -144,7 +144,7 @@
 <h2 id="1-4-datetime和timesamp"><a href="#1-4-datetime和timesamp" class="headerlink" title="1.4     datetime和timesamp"></a>1.4     datetime和timesamp</h2><p>datetime和timesamp都可以存储相同的数据类型,时间和日期，精确到秒。然而timesamp只使用datetime一半的存储空间</p>
 <p>timesamp 会根据时区变化，具有特殊的自动更新能力，允许的时间范围要小很多。</p>
 <h2 id="1-5-ip地址的处理"><a href="#1-5-ip地址的处理" class="headerlink" title="1.5    ip地址的处理"></a>1.5    ip地址的处理</h2><p>插入数据前，先用<code>inet_aton</code>把ip地址转为整型，可以节省空间，因为<code>char(15)</code> 占16字节。</p>
-<p>显示数据时，使用<code>inet_ntoa</code>把整型的ip地址转为电地址显示即可。</p>
+<p>显示数据时，使用<code>inet_ntoa</code>把整型的ip地址转为带点的地址显示即可。</p>
 <h1 id="二、schema设计的陷阱"><a href="#二、schema设计的陷阱" class="headerlink" title="二、schema设计的陷阱"></a>二、schema设计的陷阱</h1><p>1、太多的列。</p>
 <p>MySQL的存储引擎API工作时需要在服务器层和存储引擎层之间通过行缓冲格式拷贝数据，然后在服务器层将缓冲内容解码成各个列。从行缓冲中将编码过的列转换成行数据结构的操作代价是非常高的。如使用了非常宽的表(数千个字段)，然而只有一小部分列会实际用到，这时转换的代价就非常高。</p>
 <p>2、太多的关联。</p>
@@ -177,6 +177,8 @@
     <article class="blog-post-page-readmore">
     	
     	
+		
+			<a href="/2020/04/26/JVM%E5%AF%B9%E8%B1%A1%E5%88%86%E9%85%8D/" class="blog-post-page-readmore-prev" data-toggle="tooltip" data-placement="top" title="JVM对象分配">上一篇</a>
 		
 
 		
@@ -310,7 +312,7 @@
             </div>
             <div class="blog-sidebar-count blog-sidebar-padding">
                 <div class="blog-sidebar-count-left">
-                    <p class="blog-sidebar-count-p">2</p>
+                    <p class="blog-sidebar-count-p">3</p>
                     <span class="blog-sidebar-count-span">文章</span>
                 </div>
                 <div class="blog-sidebar-count-right">
